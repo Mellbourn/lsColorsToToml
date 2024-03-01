@@ -1,7 +1,7 @@
 import fs from "fs";
 
 // Define the LS_COLORS content. In a real scenario, you would read this from the process.env.LS_COLORS
-const lsColorsContent = `*.log=38;5;190:*.txt=38;5;220`;
+const lsColorsContent = process.env.LS_COLORS!;
 
 // Helper function to convert RGB to Hex
 function rgbToHex(r: number, g: number, b: number): string {

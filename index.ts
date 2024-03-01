@@ -35,21 +35,35 @@ function generate256ColorPalette(): { [key: number]: string } {
 const palette = generate256ColorPalette();
 
 // Function to convert ANSI code to hex, now more robust
-function ansiCodeToHex(code: string | undefined): { fg?: string; bg?: string } {
+function ansiCodeToHex(code: string): { fg?: string; bg?: string } {
+  const colors: { fg?: string; bg?: string } = {};
   if (!code) {
     return {}; // Return empty if no code provided
   }
+  const parts = code.split(";");
 
-  const acc: { fg?: string; bg?: string } = {};
-  if (code.startsWith("38;5;")) {
-    const num = parseInt(code.slice(5), 10);
-    acc.fg = palette[num] || "#ffffff"; // Default to white if not found
-  } else if (code.startsWith("48;5;")) {
-    const num = parseInt(code.slice(5), 10);
-    acc.bg = palette[num] || "#ffffff"; // Default to white if not found
+  for (let i = 0; i < parts.length; i++) {
+    // Check if the current part is '38' and the next is '5', indicating a foreground color code
+    if (parts[i] === "38" && parts[i + 1] === "5") {
+      const colorIndex = parseInt(parts[i + 2], 10);
+      if (!isNaN(colorIndex)) {
+        // Ensure that the color index is a number
+        colors.fg = palette[colorIndex] || "#ffffff"; // Assign foreground color
+        i += 2; // Skip the next two parts as they have been processed
+      }
+    }
+    // Check if the current part is '48' and the next is '5', indicating a background color code
+    else if (parts[i] === "48" && parts[i + 1] === "5") {
+      const colorIndex = parseInt(parts[i + 2], 10);
+      if (!isNaN(colorIndex)) {
+        // Ensure that the color index is a number
+        colors.bg = palette[colorIndex] || "#ffffff"; // Assign background color
+        i += 2; // Skip the next two parts as they have been processed
+      }
+    }
   }
 
-  return acc;
+  return colors;
 }
 
 // Parse LS_COLORS and convert to theme.toml content, now handling potential undefined codes

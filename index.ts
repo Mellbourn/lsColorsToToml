@@ -79,6 +79,9 @@ function convertLsColorsToToml(lsColors: string): string {
   const rules = entries
     .map((entry) => {
       const [pattern, codes] = entry.split("=", 2); // Ensure only the first '=' is used to split
+      if (pattern.length < 3) {
+        return "";
+      }
       const { fg, bg, bold, underline } = ansiCodeToHex(codes);
       let rule = `  { name = "${pattern}"`;
       if (fg) rule += `, fg = "${fg}"`;

@@ -2,6 +2,7 @@ import fs from "fs";
 
 // Define the LS_COLORS content by reading this from environment variable LS_COLORS
 const lsColorsContent = process.env.LS_COLORS!;
+//const lsColorsContent = "*.patch=48;5;197;38;5;232;1";
 
 // Helper function to convert RGB to Hex
 function rgbToHex(r: number, g: number, b: number): string {
@@ -34,9 +35,11 @@ function generate256ColorPalette(): { [key: number]: string } {
 
 const palette = generate256ColorPalette();
 
+type Style = { fg?: string; bg?: string; bold?: boolean; underline?: boolean };
+
 // Function to convert ANSI code to hex, now more robust
-function ansiCodeToHex(code: string): { fg?: string; bg?: string } {
-  const colors: { fg?: string; bg?: string } = {};
+function ansiCodeToHex(code: string): Style {
+  const colors: Style = {};
   if (!code) {
     return {}; // Return empty if no code provided
   }
@@ -60,6 +63,10 @@ function ansiCodeToHex(code: string): { fg?: string; bg?: string } {
         colors.bg = palette[colorIndex] || "#ffffff"; // Assign background color
         i += 2; // Skip the next two parts as they have been processed
       }
+    } else if (parts[i] === "1") {
+      colors.bold = true;
+    } else if (parts[i] === "4") {
+      colors.underline = true;
     }
   }
 
@@ -72,16 +79,24 @@ function convertLsColorsToToml(lsColors: string): string {
   const rules = entries
     .map((entry) => {
       const [pattern, codes] = entry.split("=", 2); // Ensure only the first '=' is used to split
-      const { fg, bg } = ansiCodeToHex(codes);
+      const { fg, bg, bold, underline } = ansiCodeToHex(codes);
       let rule = `  { name = "${pattern}"`;
       if (fg) rule += `, fg = "${fg}"`;
       if (bg) rule += `, bg = "${bg}"`;
+      if (bold) rule += `, bold = true`;
+      if (underline) rule += `, underline = true`;
       rule += " }";
       return rule;
     })
-    .filter((rule) => rule.includes("fg") || rule.includes("bg")); // Filter out entries without colors
+    .filter(
+      (rule) =>
+        rule.includes("fg") ||
+        rule.includes("bg") ||
+        rule.includes("bold") ||
+        rule.includes("underline")
+    ); // Filter out entries without colors
 
-  return rules.join(",\n");
+  return rules.join(",\n") + ",";
 }
 
 const themeTomlContent = convertLsColorsToToml(lsColorsContent);

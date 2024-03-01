@@ -12,8 +12,6 @@ function rgbToHex(r: number, g: number, b: number): string {
 function generate256ColorPalette(): { [key: number]: string } {
   const palette: { [key: number]: string } = {};
 
-  // Standard colors and bright colors (manual addition might be necessary based on the environment)
-
   // Generate the 6x6x6 color cube
   for (let r = 0; r < 6; r++) {
     for (let g = 0; g < 6; g++) {
@@ -36,27 +34,40 @@ function generate256ColorPalette(): { [key: number]: string } {
 
 const palette = generate256ColorPalette();
 
-// Function to convert ANSI code to hex
-function ansiCodeToHex(code: string): string {
-  const pattern = /38;5;(\d+)/;
-  const match = pattern.exec(code);
-  if (match) {
-    const colorIndex = parseInt(match[1], 10);
-    return palette[colorIndex] || "#ffffff"; // Default to white
+// Function to convert ANSI code to hex, now more robust
+function ansiCodeToHex(code: string | undefined): { fg?: string; bg?: string } {
+  if (!code) {
+    return {}; // Return empty if no code provided
   }
-  return "#ffffff"; // Default if no match
+
+  const acc: { fg?: string; bg?: string } = {};
+  if (code.startsWith("38;5;")) {
+    const num = parseInt(code.slice(5), 10);
+    acc.fg = palette[num] || "#ffffff"; // Default to white if not found
+  } else if (code.startsWith("48;5;")) {
+    const num = parseInt(code.slice(5), 10);
+    acc.bg = palette[num] || "#ffffff"; // Default to white if not found
+  }
+
+  return acc;
 }
 
-// Parse LS_COLORS and convert to theme.toml content
+// Parse LS_COLORS and convert to theme.toml content, now handling potential undefined codes
 function convertLsColorsToToml(lsColors: string): string {
   const entries = lsColors.split(":");
-  const rules = entries.map((entry) => {
-    const [pattern, codes] = entry.split("=");
-    const hexColor = ansiCodeToHex(codes);
-    return `  { name = "${pattern}", fg = "${hexColor}" }`;
-  });
+  const rules = entries
+    .map((entry) => {
+      const [pattern, codes] = entry.split("=", 2); // Ensure only the first '=' is used to split
+      const { fg, bg } = ansiCodeToHex(codes);
+      let rule = `  { name = "${pattern}"`;
+      if (fg) rule += `, fg = "${fg}"`;
+      if (bg) rule += `, bg = "${bg}"`;
+      rule += " }";
+      return rule;
+    })
+    .filter((rule) => rule.includes("fg") || rule.includes("bg")); // Filter out entries without colors
 
-  return `[filetype]\n\nrules = [\n${rules.join(",\n")}\n]`;
+  return rules.join(",\n");
 }
 
 const themeTomlContent = convertLsColorsToToml(lsColorsContent);

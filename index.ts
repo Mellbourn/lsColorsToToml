@@ -1,6 +1,6 @@
 import fs from "fs";
 
-// Define the LS_COLORS content. In a real scenario, you would read this from the process.env.LS_COLORS
+// Define the LS_COLORS content by reading this from environment variable LS_COLORS
 const lsColorsContent = process.env.LS_COLORS!;
 
 // Helper function to convert RGB to Hex

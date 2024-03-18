@@ -18,7 +18,7 @@ function generate256ColorPalette(): { [key: number]: string } {
     for (let g = 0; g < 6; g++) {
       for (let b = 0; b < 6; b++) {
         const index = 16 + r * 36 + g * 6 + b;
-        palette[index] = rgbToHex(r * 51, g * 51, b * 51);
+        palette[index] = rgbToHex((r ? 55 : 0) + r * 40, (g ? 55 : 0) + g * 40, (b ? 55 : 0) + b * 40);
       }
     }
   }

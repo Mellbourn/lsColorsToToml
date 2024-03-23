@@ -73,17 +73,45 @@ function ansiCodeToHex(code: string): Style {
   return colors;
 }
 
+type YaziPattern = { name: string; is?: string };
+function lsPatternToYazi(lsColorsPattern: string): YaziPattern {
+  if (lsColorsPattern.length < 3) {
+    const patternMap: { [key: string]: YaziPattern | undefined } = {
+      di: { name: "*/" },
+      bd: { name: "*", is: "block" },
+      cd: { name: "*", is: "char" },
+      ex: { name: "*", is: "exec" },
+      pi: { name: "*", is: "fifo" },
+      ln: { name: "*", is: "link" },
+      or: { name: "*", is: "orphan" },
+      so: { name: "*", is: "sock" },
+      st: { name: "*", is: "sticky" }
+    };
+
+    const mappedPattern = patternMap[lsColorsPattern];
+    if (mappedPattern) {
+      return mappedPattern;
+    }
+
+    return { name: "" };
+  } else {
+    return { name: lsColorsPattern };
+  }
+}
+
 // Parse LS_COLORS and convert to theme.toml content, now handling potential undefined codes
 function convertLsColorsToToml(lsColors: string): string {
   const entries = lsColors.split(":");
   const rules = entries
     .map((entry) => {
       const [pattern, codes] = entry.split("=", 2); // Ensure only the first '=' is used to split
-      if (pattern.length < 3) {
-        return "";
-      }
+
+      const { name, is } = lsPatternToYazi(pattern);
+      if (!name) return "";
       const { fg, bg, bold, underline } = ansiCodeToHex(codes);
-      let rule = `  { name = "${pattern}"`;
+
+      let rule = `  { name = "${name}"`;
+      if (is) rule += `, is = "${is}"`;
       if (fg) rule += `, fg = "${fg}"`;
       if (bg) rule += `, bg = "${bg}"`;
       if (bold) rule += `, bold = true`;

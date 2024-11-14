@@ -6,7 +6,7 @@ type ColorNamed
   = "black"
   | "red"
   | "green"
-  | "orange"
+  | "yellow"
   | "blue"
   | "magenta"
   | "cyan"
@@ -58,7 +58,7 @@ const fgColors: Record<number, ColorNamed> = {
   30: "black",
   31: "red",
   32: "green",
-  33: "orange",
+  33: "yellow",
   34: "blue",
   35: "magenta",
   36: "cyan",
@@ -76,7 +76,7 @@ const bgColors: Record<number, ColorNamed> = {
   40: "black",
   41: "red",
   42: "green",
-  43: "orange",
+  43: "yellow",
   44: "blue",
   45: "magenta",
   46: "cyan",
@@ -133,7 +133,6 @@ function ansiCodeToHex(code: string): Style {
     return {}; // Return empty if no code provided
   }
   const parts = code.split(";").map(p => parseInt(p, 10));
-  console.log(parts);
 
   for (let i = 0; i < parts.length; i++) {
     // Check if the current part is '38' and the next is '5', indicating a foreground color code

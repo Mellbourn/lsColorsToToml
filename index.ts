@@ -214,7 +214,7 @@ function convertLsColorsToToml(lsColors: string): string {
       if (is) ruleParts.push(`is = "${is}"`);
       if (fg) ruleParts.push(`fg = "${fg}"`);
       if (bg) ruleParts.push(`bg = "${bg}"`);
-      for (let mode of [...MODES]) {
+      for (let mode of MODES) {
         if (style[mode]) ruleParts.push(`${mode} = true`);
       }
 

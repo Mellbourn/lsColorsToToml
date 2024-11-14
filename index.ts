@@ -32,15 +32,17 @@ type Style = {
   crossed?: boolean
 };
 
-type Mode
-  = "bold"
-  | "underline"
-  | "blink"
-  | "blink_rapid"
-  | "reversed"
-  | "hidden"
-  | "crossed"
-  ;
+const MODES = 
+  [ "bold"
+  , "underline"
+  , "blink"
+  , "blink_rapid"
+  , "reversed"
+  , "hidden"
+  , "crossed"
+  ] as const;
+
+type Mode = typeof MODES[number];
 
 const modes: Record<number, Mode> = {
   1: "bold",
@@ -131,6 +133,7 @@ function ansiCodeToHex(code: string): Style {
     return {}; // Return empty if no code provided
   }
   const parts = code.split(";").map(p => parseInt(p, 10));
+  console.log(parts);
 
   for (let i = 0; i < parts.length; i++) {
     // Check if the current part is '38' and the next is '5', indicating a foreground color code
@@ -203,24 +206,27 @@ function convertLsColorsToToml(lsColors: string): string {
 
       const { name, is } = lsPatternToYazi(pattern);
       if (!name) return "";
-      const { fg, bg, bold, underline } = ansiCodeToHex(codes);
+      const style = ansiCodeToHex(codes);
+      const { fg, bg } = style;
 
-      let rule = `  { name = "${name}"`;
-      if (is) rule += `, is = "${is}"`;
-      if (fg) rule += `, fg = "${fg}"`;
-      if (bg) rule += `, bg = "${bg}"`;
-      if (bold) rule += `, bold = true`;
-      if (underline) rule += `, underline = true`;
-      rule += " }";
-      return rule;
+      const ruleParts: string[] = [];
+      ruleParts.push(`name = "${name}"`)
+      if (is) ruleParts.push(`is = "${is}"`);
+      if (fg) ruleParts.push(`fg = "${fg}"`);
+      if (bg) ruleParts.push(`bg = "${bg}"`);
+      for (let mode of [...MODES]) {
+        if (style[mode]) ruleParts.push(`${mode} = true`);
+      }
+
+      // Only produce a rule if there's more than just the name
+      if (ruleParts.length > 1) {
+        return `  { ${ruleParts.join(", ")} }`;
+      } else {
+        return null;
+      }
     })
-    .filter(
-      (rule) =>
-        rule.includes("fg") ||
-        rule.includes("bg") ||
-        rule.includes("bold") ||
-        rule.includes("underline")
-    ); // Filter out entries without colors
+    // Filter out entries without colors
+    .filter((rule) => rule); 
 
   return rules.join(",\n") + ",";
 }

@@ -135,22 +135,40 @@ function ansiCodeToHex(code: string): Style {
   const parts = code.split(";").map(p => parseInt(p, 10));
 
   for (let i = 0; i < parts.length; i++) {
-    // Check if the current part is '38' and the next is '5', indicating a foreground color code
-    if (parts[i] == 38 && parts[i + 1] == 5) {
-      const colorIndex = parts[i + 2];
-      if (!isNaN(colorIndex)) {
-        // Ensure that the color index is a number
-        colors.fg = palette[colorIndex] || "#ffffff"; // Assign foreground color
-        i += 2; // Skip the next two parts as they have been processed
+    // Check if the current part is '38', indicating a foreground color code
+    if (parts[i] == 38) {
+      // 5 indicates 256 color palette
+      if (parts[i + 1] == 5) {
+        const colorIndex = parts[i + 2];
+        if (!isNaN(colorIndex)) {
+          // Ensure that the color index is a number
+          colors.fg = palette[colorIndex] || "#ffffff"; // Assign foreground color
+          i += 2; // Skip the next two parts as they have been processed
+        }
+      }
+      // 2 indicates 24-bit RGB color
+      else if (parts[i + 1] == 2) {
+        const [r, g, b] = parts.slice(i + 2, i + 5);
+        colors.fg = rgbToHex(r, g, b);
+        i += 4
       }
     }
-    // Check if the current part is '48' and the next is '5', indicating a background color code
-    else if (parts[i] == 48 && parts[i + 1] == 5) {
-      const colorIndex = parts[i + 2];
-      if (!isNaN(colorIndex)) {
-        // Ensure that the color index is a number
-        colors.bg = palette[colorIndex] || "#ffffff"; // Assign background color
-        i += 2; // Skip the next two parts as they have been processed
+    // Check if the current part is '48', indicating a background color code
+    else if (parts[i] == 48) {
+      // 5 indicates 256 color palette
+      if (parts[i + 1] == 5) {
+        const colorIndex = parts[i + 2];
+        if (!isNaN(colorIndex)) {
+          // Ensure that the color index is a number
+          colors.bg = palette[colorIndex] || "#ffffff"; // Assign background color
+          i += 2; // Skip the next two parts as they have been processed
+        }
+      }
+      // 2 indicates 24-bit RGB color
+      else if (parts[i + 1] == 2) {
+        const [r, g, b] = parts.slice(i + 2, i + 5);
+        colors.bg = rgbToHex(r, g, b);
+        i += 4
       }
     } else if (parts[i] == 0) {
       // reset

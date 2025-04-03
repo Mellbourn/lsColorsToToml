@@ -6,7 +6,10 @@ This program converts the LS_COLORS environment variable to a toml file. The tom
 
 ## Usage
 
+Prerequisite: [node](https://nodejs.org/en/download) needs to be installed to run this
+
 ```sh
+npm i
 npm run start|tail -n +4|pbcopy
 ```
 

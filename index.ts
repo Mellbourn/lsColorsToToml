@@ -1,17 +1,108 @@
 import fs from "fs";
 
+type Color = ColorHex | ColorNamed;
+type ColorHex = `#${string}`;
+type ColorNamed
+  = "black"
+  | "red"
+  | "green"
+  | "yellow"
+  | "blue"
+  | "magenta"
+  | "cyan"
+  | "gray"
+  | "darkgray"
+  | "lightred"
+  | "lightgreen"
+  | "lightyellow"
+  | "lightblue"
+  | "lightmagenta"
+  | "lightcyan"
+  ;
+
+type Style = {
+  fg?: Color;
+  bg?: Color;
+  bold?: boolean;
+  underline?: boolean
+  blink?: boolean
+  blink_rapid?: boolean
+  reversed?: boolean
+  hidden?: boolean
+  crossed?: boolean
+};
+
+const MODES = 
+  [ "bold"
+  , "underline"
+  , "blink"
+  , "blink_rapid"
+  , "reversed"
+  , "hidden"
+  , "crossed"
+  ] as const;
+
+type Mode = typeof MODES[number];
+
+const modes: Record<number, Mode> = {
+  1: "bold",
+  4: "underline",
+  5: "blink",
+  6: "blink_rapid",
+  7: "reversed",
+  8: "hidden",
+  9: "crossed",
+};
+
+const fgColors: Record<number, ColorNamed> = {
+  30: "black",
+  31: "red",
+  32: "green",
+  33: "yellow",
+  34: "blue",
+  35: "magenta",
+  36: "cyan",
+  37: "gray",
+  90: "darkgray",
+  91: "lightred",
+  92: "lightgreen",
+  93: "lightyellow",
+  94: "lightblue",
+  95: "lightmagenta",
+  96: "lightcyan",
+}
+
+const bgColors: Record<number, ColorNamed> = {
+  40: "black",
+  41: "red",
+  42: "green",
+  43: "yellow",
+  44: "blue",
+  45: "magenta",
+  46: "cyan",
+  47: "gray",
+  100: "darkgray",
+  101: "lightred",
+  102: "lightgreen",
+  103: "lightyellow",
+  104: "lightblue",
+  105: "lightmagenta",
+  106: "lightcyan",
+}
+
+
 // Define the LS_COLORS content by reading this from environment variable LS_COLORS
 const lsColorsContent = process.env.LS_COLORS!;
 //const lsColorsContent = "*.patch=48;5;197;38;5;232;1";
 
 // Helper function to convert RGB to Hex
-function rgbToHex(r: number, g: number, b: number): string {
-  return "#" + [r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("");
+function rgbToHex(r: number, g: number, b: number): ColorHex {
+  return `#${[r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("")}`;
 }
 
 // Generate the 256-color palette
-function generate256ColorPalette(): { [key: number]: string } {
-  const palette: { [key: number]: string } = {};
+function generate256ColorPalette(): { [key: number]: ColorHex } {
+  const palette: { [key: number]: ColorHex } = {};
 
   // Generate the 6x6x6 color cube
   for (let r = 0; r < 6; r++) {
@@ -35,38 +126,62 @@ function generate256ColorPalette(): { [key: number]: string } {
 
 const palette = generate256ColorPalette();
 
-type Style = { fg?: string; bg?: string; bold?: boolean; underline?: boolean };
-
 // Function to convert ANSI code to hex, now more robust
 function ansiCodeToHex(code: string): Style {
-  const colors: Style = {};
+  let colors: Style = {};
   if (!code) {
     return {}; // Return empty if no code provided
   }
-  const parts = code.split(";");
+  const parts = code.split(";").map(p => parseInt(p, 10));
 
   for (let i = 0; i < parts.length; i++) {
-    // Check if the current part is '38' and the next is '5', indicating a foreground color code
-    if (parts[i] === "38" && parts[i + 1] === "5") {
-      const colorIndex = parseInt(parts[i + 2], 10);
-      if (!isNaN(colorIndex)) {
-        // Ensure that the color index is a number
-        colors.fg = palette[colorIndex] || "#ffffff"; // Assign foreground color
-        i += 2; // Skip the next two parts as they have been processed
+    // Check if the current part is '38', indicating a foreground color code
+    if (parts[i] == 38) {
+      // 5 indicates 256 color palette
+      if (parts[i + 1] == 5) {
+        const colorIndex = parts[i + 2];
+        if (!isNaN(colorIndex)) {
+          // Ensure that the color index is a number
+          colors.fg = palette[colorIndex] || "#ffffff"; // Assign foreground color
+          i += 2; // Skip the next two parts as they have been processed
+        }
+      }
+      // 2 indicates 24-bit RGB color
+      else if (parts[i + 1] == 2) {
+        const [r, g, b] = parts.slice(i + 2, i + 5);
+        colors.fg = rgbToHex(r, g, b);
+        i += 4
       }
     }
-    // Check if the current part is '48' and the next is '5', indicating a background color code
-    else if (parts[i] === "48" && parts[i + 1] === "5") {
-      const colorIndex = parseInt(parts[i + 2], 10);
-      if (!isNaN(colorIndex)) {
-        // Ensure that the color index is a number
-        colors.bg = palette[colorIndex] || "#ffffff"; // Assign background color
-        i += 2; // Skip the next two parts as they have been processed
+    // Check if the current part is '48', indicating a background color code
+    else if (parts[i] == 48) {
+      // 5 indicates 256 color palette
+      if (parts[i + 1] == 5) {
+        const colorIndex = parts[i + 2];
+        if (!isNaN(colorIndex)) {
+          // Ensure that the color index is a number
+          colors.bg = palette[colorIndex] || "#ffffff"; // Assign background color
+          i += 2; // Skip the next two parts as they have been processed
+        }
       }
-    } else if (parts[i] === "1") {
-      colors.bold = true;
-    } else if (parts[i] === "4") {
-      colors.underline = true;
+      // 2 indicates 24-bit RGB color
+      else if (parts[i + 1] == 2) {
+        const [r, g, b] = parts.slice(i + 2, i + 5);
+        colors.bg = rgbToHex(r, g, b);
+        i += 4
+      }
+    } else if (parts[i] == 0) {
+      // reset
+      colors = {};
+    } else if (parts[i] in modes) {
+      const mode = modes[parts[i]];
+      colors[mode] = true;
+    } else if (parts[i] in fgColors) {
+      const color = fgColors[parts[i]];
+      colors.fg = color;
+    } else if (parts[i] in bgColors) {
+      const color = bgColors[parts[i]];
+      colors.bg = color;
     }
   }
 
@@ -108,24 +223,27 @@ function convertLsColorsToToml(lsColors: string): string {
 
       const { name, is } = lsPatternToYazi(pattern);
       if (!name) return "";
-      const { fg, bg, bold, underline } = ansiCodeToHex(codes);
+      const style = ansiCodeToHex(codes);
+      const { fg, bg } = style;
 
-      let rule = `  { name = "${name}"`;
-      if (is) rule += `, is = "${is}"`;
-      if (fg) rule += `, fg = "${fg}"`;
-      if (bg) rule += `, bg = "${bg}"`;
-      if (bold) rule += `, bold = true`;
-      if (underline) rule += `, underline = true`;
-      rule += " }";
-      return rule;
+      const ruleParts: string[] = [];
+      ruleParts.push(`name = "${name}"`)
+      if (is) ruleParts.push(`is = "${is}"`);
+      if (fg) ruleParts.push(`fg = "${fg}"`);
+      if (bg) ruleParts.push(`bg = "${bg}"`);
+      for (let mode of MODES) {
+        if (style[mode]) ruleParts.push(`${mode} = true`);
+      }
+
+      // Only produce a rule if there's more than just the name
+      if (ruleParts.length > 1) {
+        return `  { ${ruleParts.join(", ")} }`;
+      } else {
+        return null;
+      }
     })
-    .filter(
-      (rule) =>
-        rule.includes("fg") ||
-        rule.includes("bg") ||
-        rule.includes("bold") ||
-        rule.includes("underline")
-    ); // Filter out entries without colors
+    // Filter out entries without colors
+    .filter((rule) => rule); 
 
   return rules.join(",\n") + ",";
 }

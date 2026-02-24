@@ -188,19 +188,19 @@ function ansiCodeToHex(code: string): Style {
   return colors;
 }
 
-type YaziPattern = { name: string; is?: string };
+type YaziPattern = { url: string; is?: string };
 function lsPatternToYazi(lsColorsPattern: string): YaziPattern {
   if (lsColorsPattern.length < 3) {
     const patternMap: { [key: string]: YaziPattern | undefined } = {
-      di: { name: "*/" },
-      bd: { name: "*", is: "block" },
-      cd: { name: "*", is: "char" },
-      ex: { name: "*", is: "exec" },
-      pi: { name: "*", is: "fifo" },
-      ln: { name: "*", is: "link" },
-      or: { name: "*", is: "orphan" },
-      so: { name: "*", is: "sock" },
-      st: { name: "*", is: "sticky" }
+      di: { url: "*/" },
+      bd: { url: "*", is: "block" },
+      cd: { url: "*", is: "char" },
+      ex: { url: "*", is: "exec" },
+      pi: { url: "*", is: "fifo" },
+      ln: { url: "*", is: "link" },
+      or: { url: "*", is: "orphan" },
+      so: { url: "*", is: "sock" },
+      st: { url: "*", is: "sticky" }
     };
 
     const mappedPattern = patternMap[lsColorsPattern];
@@ -208,9 +208,9 @@ function lsPatternToYazi(lsColorsPattern: string): YaziPattern {
       return mappedPattern;
     }
 
-    return { name: "" };
+    return { url: "" };
   } else {
-    return { name: lsColorsPattern };
+    return { url: lsColorsPattern };
   }
 }
 
@@ -221,13 +221,13 @@ function convertLsColorsToToml(lsColors: string): string {
     .map((entry) => {
       const [pattern, codes] = entry.split("=", 2); // Ensure only the first '=' is used to split
 
-      const { name, is } = lsPatternToYazi(pattern);
-      if (!name) return "";
+      const { url, is } = lsPatternToYazi(pattern);
+      if (!url) return "";
       const style = ansiCodeToHex(codes);
       const { fg, bg } = style;
 
       const ruleParts: string[] = [];
-      ruleParts.push(`name = "${name}"`)
+      ruleParts.push(`url = "${url}"`)
       if (is) ruleParts.push(`is = "${is}"`);
       if (fg) ruleParts.push(`fg = "${fg}"`);
       if (bg) ruleParts.push(`bg = "${bg}"`);

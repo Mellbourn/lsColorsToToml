@@ -96,12 +96,11 @@ const lsColorsContent = process.env.LS_COLORS!;
 //const lsColorsContent = "*.patch=48;5;197;38;5;232;1";
 
 // Helper function to convert RGB to Hex
-function rgbToHex(r: number, g: number, b: number): ColorHex {
-  return `#${[r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("")}`;
-}
+const rgbToHex = (r: number, g: number, b: number): ColorHex =>
+  `#${[r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("")}`;
 
 // Generate the 256-color palette
-function generate256ColorPalette(): { [key: number]: ColorHex } {
+const generate256ColorPalette = (): { [key: number]: ColorHex } => {
   const palette: { [key: number]: ColorHex } = {};
 
   // Generate the 6x6x6 color cube
@@ -127,7 +126,7 @@ function generate256ColorPalette(): { [key: number]: ColorHex } {
 const palette = generate256ColorPalette();
 
 // Function to convert ANSI code to hex, now more robust
-function ansiCodeToHex(code: string): Style {
+const ansiCodeToHex = (code: string): Style => {
   let colors: Style = {};
   if (!code) {
     return {}; // Return empty if no code provided
@@ -189,7 +188,7 @@ function ansiCodeToHex(code: string): Style {
 }
 
 type YaziPattern = { url: string; is?: string };
-function lsPatternToYazi(lsColorsPattern: string): YaziPattern {
+const lsPatternToYazi = (lsColorsPattern: string): YaziPattern => {
   if (lsColorsPattern.length < 3) {
     const patternMap: { [key: string]: YaziPattern | undefined } = {
       di: { url: "*/" },
@@ -215,7 +214,7 @@ function lsPatternToYazi(lsColorsPattern: string): YaziPattern {
 }
 
 // Parse LS_COLORS and convert to theme.toml content, now handling potential undefined codes
-function convertLsColorsToToml(lsColors: string): string {
+const convertLsColorsToToml = (lsColors: string): string => {
   const entries = lsColors.split(":");
   const rules = entries
     .map((entry) => {
